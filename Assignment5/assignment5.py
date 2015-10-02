@@ -3,30 +3,29 @@
 #Used Assignment 2 as a base
 #Worked with Mario Alanis 
 import sys
-import math
+#import math
 
 class Node:
   
-	def __init__(self, locationx, locationy, typeN):
+	def __init__(self, locationx, locationy, reward):
 		self.x = locationx 
 		self.y = locationy
 		self.p = None
-		self.f = 0
-		self.cost = 0
-		self.typeN = typeN #0 is free, 1 is mountain, 2 is wall, 3 is a snake, 4 is a barn
+		self.u = 0
+		self.type_val = 0
+		#self.cost = 0
+		self.reward = reward #0 is free, 1 is mountain, 2 is wall, 3 is a snake, 4 is a barn
+		if self.reward == 0:
+			self.type_val = 0
+		if self.reward == 1:
+			self.type_val = -1
+		if self.reward == 3:
+			self.type_val = -2
+		if self.reward == 4:
+			self.type_val = 1
 	
 	def setParent(self, parent):
 		self.p = parent
-		if self.typeN == 0:
-			type_val = 0
-		if self.typeN == 1:
-			type_val = -1
-		if self.typeN == 3:
-			type_val = -2
-		if self.typeN == 4:
-			type_val = 1
-		self.cost = parent.cost + 10 + int(self.x != parent.x and self.y !=parent.y)*4 + type_val
-		self.f = self.cost 
 
 def getMap(arg):
 	mymap = []
@@ -38,18 +37,16 @@ def getMap(arg):
 	for x in (range(0,len(mymap))):
 		for y in range(0,len(mymap[x])):
 			mymap[x][y] = Node(x,y,int(mymap[x][y]))
-			#print mymap[x][y].x,mymap[x][y].y, mymap[x][y].typeN
+			
+			#print mymap[x][y].x,mymap[x][y].y, mymap[x][y].reward
 	return mymap
 
-def newCost(n, node):
-	return 1
-	#return 10 + int(n.x != node.x and n.y != node.y)*4 + n.typeN*10
 
 class MDP:
 	
 	def __init__(self, mymap, e):
-		#self.Open = {}
-		#self.Close = {}
+		self.Open = {}
+		self.Close = {}
 		self.mymap = mymap
 		self.length = len(mymap)
 		self.goal = mymap[0][9]
@@ -67,21 +64,78 @@ class MDP:
 					if not((x == n.x-1 and y == n.y-1) or (x==n.x+1 and y==n.y+1) or (x==n.x-1 and y ==n.y+1) or (n==n.x+1 and y==n.y-1)):
 					#we have to make sure it is within bounds(No corners!)
 					#we also have to make sure we do not add the same node
-						if(self.mymap[x][y].typeN != 2):
+						if(self.mymap[x][y].reward != 2):
 							adj = mymap[x][y]
 							adj_matrix.append(adj)
 							self.u = 0
 		return adj_matrix
 		
+	def expect_u(self, node, gama, mymap):
+		adj = self.getAdj(node)
+		
+		sum_list = []
+		up = 0
+		right = 0
+		left = 0
+		down = 0
+		
+
+		if mymap[node.x][node.y+1] in adj:#if there is an up node
+			up = mymap[node.x][node.y+1].type_val
+		if mymap[node.x][node.y] in adj:#right node
+			right = mymap[node.x+1][node.y].type_val
+		if mymap[node.x-1][node.y] in adj:#left node
+			left = mymap[node.x-1][node.y].type_val
+		if mymap[node.x][node.y-1] in adj:#if there is an down node
+			down = mymap[node.x][node.y-1].type_val
+		
+		is_up = .8*up + .1*left+.1*right
+		is_right = .8*right + .1*down +.1*up
+		is_left = .8*left+ .1*down +.1*up
+		is_down = .8*down+.1*right +.1*left
+		
+		sum_list.append(is_up)
+		sum_list.append(is_right)
+		sum_list.append(is_left)
+		sum_list.append(is_down)
+		
+		eu = gama * max(sum_list)
+	
+		return eu
+
 	def MDPfunc(self):
 		gama = 0.9
 		#R(s) = reward of state 
 		#using Bellman equation for utilities
 			#U(s) = R(s) + gama*argmax * sum(P(s' given s,a)*U(s'))
 			#ex) U(3,1) = R(3,1)+gama*max{.8U(2,1)+.1U(3,2)+.1U(3,1),.9U(3,1)+...}
-			
-			
+		print self.expect_u(self.start, gama, self.mymap)
+		'''
+		node = self.start
+		self.Open[node] = node.u
+		while self.Open != {}:
+			#find node.f that is the smallest
+			min_val_find = min(self.Open, key=self.Open.get)
+			min_val = self.Open[min_val_find]
+			for value in self.Open:
+				if self.Open[value] == min_val:
+					node = value
+					break
+			del self.Open[node]
+			if node.x == self.goal.x and node.y == self.goal.y:
+				#self.time_to_print(node)
+				break
 		
+			self.Close[node] = node.u
+			node_adj = self.getAdj(node)
+			for n in node_adj:
+				if (n.reward != 2 and not(n in self.Close)):
+					if not(n in self.Open) or (n.u > (node.u + expect_u(node, gama, self.mymap))):
+						#n.f = node.f + newCost(n,node)
+						n.setParent(node)#calculates the f value
+						if not(n in self.Open):
+							self.Open[n] = n.u
+		'''
 		
 
 	'''	
@@ -135,5 +189,5 @@ class MDP:
 
 mymap = getMap(sys.argv[1])
 searched = MDP(mymap, sys.argv[2])
-searched.starsearch()
+searched.MDPfunc()
 

@@ -13,12 +13,20 @@ class Node:
 		self.p = None
 		self.f = 0
 		self.cost = 0
-		self.typeN = typeN #0 is free, 1 is mountain, 2 is wall
+		self.typeN = typeN #0 is free, 1 is mountain, 2 is wall, 3 is a snake, 4 is a barn
 	
-	def setParent(self, parent, h):
+	def setParent(self, parent):
 		self.p = parent
-		self.cost = parent.cost + 10 + int(self.x != parent.x and self.y !=parent.y)*4 + self.typeN*10
-		self.f = self.cost + h(self.x, self.y)
+		if self.typeN == 0:
+			type_val = 0
+		if self.typeN == 1:
+			type_val = -1
+		if self.typeN == 3:
+			type_val = -2
+		if self.typeN == 4:
+			type_val = 1
+		self.cost = parent.cost + 10 + int(self.x != parent.x and self.y !=parent.y)*4 + type_val
+		self.f = self.cost 
 
 def getMap(arg):
 	mymap = []
@@ -34,43 +42,49 @@ def getMap(arg):
 	return mymap
 
 def newCost(n, node):
-	return 10 + int(n.x != node.x and n.y != node.y)*4 + n.typeN*10
+	return 1
+	#return 10 + int(n.x != node.x and n.y != node.y)*4 + n.typeN*10
 
-class astar:
+class MDP:
 	
-	def __init__(self, mymap, heuristic):
-		#self.Open = []
-		self.Open = {}
-		self.Close = {}
+	def __init__(self, mymap, e):
+		#self.Open = {}
+		#self.Close = {}
 		self.mymap = mymap
 		self.length = len(mymap)
 		self.goal = mymap[0][9]
 		self.start = mymap[7][0]
-		if heuristic == 1:
-			self.h = self.man
-		else:
-			self.h = self.pyth
+		self.e = e
+		self.u = 0
 		
 	def getAdj(self, n):
 		adj_matrix = []
+		#our A* found adjs in the corners
+		#we do not want corners this time
 		for x in range(n.x-1, n.x+2): #we add +2 because the range does not include the final value
 			for y in range(n.y-1, n.y+2):
 				if(x>= 0 and  y>=0 and x<len(self.mymap) and y<len(self.mymap[x]) and not (x== n.x and y==n.y)):
-					#we have to make sure it is within bounds
+					if not((x == n.x-1 and y == n.y-1) or (x==n.x+1 and y==n.y+1) or (x==n.x-1 and y ==n.y+1) or (n==n.x+1 and y==n.y-1)):
+					#we have to make sure it is within bounds(No corners!)
 					#we also have to make sure we do not add the same node
-					if(self.mymap[x][y].typeN != 2):
-						adj = mymap[x][y]
-						adj_matrix.append(adj)
+						if(self.mymap[x][y].typeN != 2):
+							adj = mymap[x][y]
+							adj_matrix.append(adj)
+							self.u = 0
 		return adj_matrix
 		
-	def man(self,x,y):
-		man_val = abs(x-self.goal.x) + abs(y-self.goal.y)
-		return man_val
-	
-	def pyth(self, x, y):
-		#use the a^2 + b^2 = c^2 theory!
-		return math.sqrt((((x-self.goal.x)**2) + ((y-self.goal.y)**2)))
+	def MDPfunc(self):
+		gama = 0.9
+		#R(s) = reward of state 
+		#using Bellman equation for utilities
+			#U(s) = R(s) + gama*argmax * sum(P(s' given s,a)*U(s'))
+			#ex) U(3,1) = R(3,1)+gama*max{.8U(2,1)+.1U(3,2)+.1U(3,1),.9U(3,1)+...}
+			
+			
 		
+		
+
+	'''	
 	#A* search!	
 	def starsearch(self):
 		locations = 0
@@ -82,36 +96,25 @@ class astar:
 			min_val_find = min(self.Open, key=self.Open.get)
 			min_val = self.Open[min_val_find]
 			for value in self.Open:
-			#	print "In Open: ", val.x, val.y, val.f
 				if self.Open[value] == min_val:
 					node = value
 					break
-			#		print "min_val", min_val
-			#print "remove: ", node.f
-			#self.Open.remove(node)
 			del self.Open[node]
 			if node.x == self.goal.x and node.y == self.goal.y:
-				#print "goal: ", self.goal.x, " ",self.goal.y
-				#print "current: ", node.x, node.y
-				#print "p of current: ", node.p.x, node.p.y
-				#print "Locations evaluated: ", locations
-				self.time_to_print(node)
+				#self.time_to_print(node)
 				break
-				
-			#print "*********************"
-			#print "Adding to close: (", node.x, ", ",node.y,")"
-			#print "*********************"
-			
+		
 			self.Close[node] = node.f
 			node_adj = self.getAdj(node)
 			for n in node_adj:
 				if (n.typeN != 2 and not(n in self.Close)):
 					if not(n in self.Open) or (n.f > (node.f + newCost(n,node))):
-						n.f = node.f + newCost(n,node)
-						n.setParent(node,self.h)#calculates the f value
+						#n.f = node.f + newCost(n,node)
+						#n.setParent(node,self.h)#calculates the f value
 						if not(n in self.Open):
 							self.Open[n] = n.f
 							#print "adding to open: ", n.x, n.y
+		'''
 	
 	def time_to_print(self, nextNode):
 		print "This is my path: "
@@ -120,7 +123,7 @@ class astar:
 		while not(nextNode.x == self.start.x and nextNode.y == self.start.y):
 			#print "(", nextNode.x, ",", nextNode.y, ")"
 			stringArr.append(["(", nextNode.x, ",", nextNode.y, ")"])
-			cost += newCost(nextNode, nextNode.p)
+			#cost += newCost(nextNode, nextNode.p)
 			nextNode = nextNode.p
 		stringArr.append(["(", nextNode.x, ",", nextNode.y, ")"])
 		for lis in reversed(stringArr):
@@ -131,6 +134,6 @@ class astar:
 
 
 mymap = getMap(sys.argv[1])
-searched = astar(mymap, int(sys.argv[2]))
+searched = MDP(mymap, sys.argv[2])
 searched.starsearch()
 

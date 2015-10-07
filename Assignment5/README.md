@@ -5,20 +5,20 @@ the path. I believe this is due to the negative rewards of the snakes in other p
 
 I tried the following values:
 
-0.0000001 "\n"
-0.001 \n
-0.01
-0.1
-0.5
-0.9
-0.900001
-1
-2
-3
-4
-5
-6
-7
-8
-9
+0.0000001,
+0.001,
+0.01,
+0.1,
+0.5,
+0.9,
+0.900001,
+1,
+2,
+3,
+4,
+5,
+6,
+7,
+8,
+9,
 9.000001

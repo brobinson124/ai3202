@@ -285,6 +285,8 @@ def main():
 		else:
 			print("Not a valid option")
 			sys.exit(2)
+			
+	print "Next step: Joints"
 
 
 if __name__ == "__main__":

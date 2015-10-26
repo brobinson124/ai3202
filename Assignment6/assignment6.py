@@ -23,6 +23,8 @@ def setNodes(pollution_val, smoker_val):
 	#NOTE: "high pollution" = ~P
 	#..... "low pollution" = P
 	
+	nodes = []
+	
 	#Smoker
 	smoker = Node("Smoker")
 	smoker.set_prob("T", smoker_val)
@@ -50,15 +52,71 @@ def setNodes(pollution_val, smoker_val):
 	d.set_prob("C", .65) #c = T
 	d.set_prob("~C", .3) #c = F
 
+	nodes.append(smoker)
+	nodes.append(pollution)
+	nodes.append(cancer)
+	nodes.append(x)
+	nodes.append(d)
+	
+	return nodes
 
+'''
+Marginals
+'''
+
+def marginal_c(cancer, pollution, smoker):
+	first = cancer.prob["~PS"] * (1.0 - pollution.prob["L"]) * smoker.prob["T"]
+	second = cancer.prob["~P~S"] * (1.0 - pollution.prob["L"]) * (1.0 - smoker.prob["T"])
+	third= cancer.prob["PS"] * pollution.prob["L"] * smoker.prob["T"]
+	fourth = cancer.prob["P~S"] * pollution.prob["L"] * (1.0 - smoker.prob["T"])
+	 
+	prob = first + second + third + fourth
 	
-	prob_dict["C"] = val_c
-	prob_dict["~C"] = 1-val_c
+	prob_dict["marg_c"] = prob
+	prob_dict["~marg_c"] = 1-prob
 	
-def marginal_c(c, p, s):
+	return prob
+
+def marginal_d(cancer, d):	
+	first = d.prob["C"] * prob_dict["marg_c"]
+	second = d.prob["~C"] * prob_dict["~marg_c"]
 	
+	prob = first + second
 	
-def conditional(node):
+	prob_dict["d"] = prob
+	prob_dict["~d"] = 1-prob
+	return prob
+	
+def marginal_x(cancer, x):
+	first = x.prob["C"] * prob_dict["marg_c"]
+	second = x.prob["~C"] * prob_dict["~marg_c"]
+	
+	prob = first + second
+	
+	prob_dict["x"] = prob
+	prob_dict["~x"] = 1-prob
+	return prob
+	
+'''
+Conditionals
+'''
+def c_given_s(cancer, pollution, smoker):
+	prob = cancer.prob["PS"] * pollution.prob["L"] * smoker.prob["T"] + (cancer.prob["~PS"] * pollution.prob["H"] * smoker.prob["T"])
+	prob = prob / smoker.prob["T"]
+	prob_dict["c_given_s"] = prob
+	
+	return prob	
+	
+def s_given_c(cancer, pollution, smoker):	
+	
+	c_given_s(cancer, pollution, smoker)
+	
+	prob = (prob_dict["c_given_s"] * smoker.prob["T"])/prob_dict["marg_c"]
+	prob_dict["s_given_c"] = prob
+	
+	return prob
+	
+def 
 	
 def x_given_d(x, d):
 	#prob(x|c)*P(c)*P(d|c) + P(x|~c)*P(~c)*P(d|~c)  /  P(d)
@@ -139,53 +197,94 @@ def s_given_d(d,pollution,smoker,cancer):
 	return prob_dict["s_given_d"]
 	
 def c_given_d(cancer, d):
-	prob = ( d.prob["C"] * prob_dict["marge_c"] ) / prob_dict["d"]
+	prob = ( d.prob["C"] * prob_dict["marg_c"] ) / prob_dict["d"]
 	
 	prob_dict["c_given_d"] = prob_dict
 	
 	return prob
 
-	
+		
 	
 def main():
-    try:
-		opts, args = getopt.getopt(sys.argv[1:], "m:vg:aj:bp:c", ["marginal=", "conditional=","joint=","prior"])
-    except getopt.GetoptError as err:
-        # print help information and exit:
-        print str(err) # will print something like "option -a not recognized"
-       # usage()
-        sys.exit(2)
-    output = None
-    p_output = None
-    val = None
-    for o, a in opts:
-        if o in ("-j"):
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "m:g:j:p:")
+	except getopt.GetoptError as err:
+		print str(err)
+		sys.exit(2)
+	output = None
+	p_output = None
+	val = None
+	operation = None
+	for o, a in opts:
+		if o in ("-j"):
+			operation = o
 			output = a
-        elif o in ("-m"):
-            output = a
-        elif o in ("-g"):
-            output = a
-        elif o in ("-p"):
+		elif o in ("-m"):
+			operation = o
+			output = a
+		elif o in ("-g"):
+			operation = o
+			output = a
+		elif o in ("-p"):
 			p_output = a[0]
 			val = float(a[1:])
-        else:
-            assert False, "unhandled option"
-    # ...
-    print output#now store the output into a node
-    
-    pollution_val = .1
-    smoker_val = .3
-    
-    if p_output = "s":
-		setNodes(pollution_val, val)
-	elif p_output = "p":
-		setNodes(val, smoker_val)
-	else:
-		setNodes(pollution_val, smoker_val)
-		
+			output = a[0]
+		else: 
+			assert False, "unhandled option"
 
-	#call functions to do math
+	print output#now store the output into a node
     
+	pollution_val = .9
+	smoker_val = .3
+	
+	nodes = []
+	
+	if (p_output == "S"):
+		smoker_val = val
+		nodes = setNodes(pollution_val, smoker_val)
+	elif (p_output == "P"):
+		pollution_val = val
+		nodes = setNodes(pollution_val, smoker_val)
+	else:
+		nodes = setNodes(pollution_val, smoker_val)
+		
+	smoker = nodes[0]
+	pollution = nodes[1]
+	cancer = nodes[2]
+	x = nodes[3]
+	d = nodes[4]
+		
+#call functions to do math
+	marg_c = marginal_c(cancer,pollution, smoker)
+	marg_d = marginal_d(cancer, d)
+	marg_x = marginal_x(cancer, x)
+	
+	if operation == "-m":
+		if output == "c":
+			print(marg_c)
+		elif output == "~c":
+			print(prob_dict["~marg_c"])
+		elif output == "s":
+			print(smoker_val)
+		elif output == "~s":
+			opposite_val = 1- smoker_val 
+			print(opposite_val)
+		elif output == "p":
+			print(pollution_val)
+		elif output == "~p":
+			opposite_val_p = 1 - pollution_val
+			print(opposite_val_p)
+		elif output == "x":
+			print "Not written yet"
+		elif output == "~x":
+			print "Not written yet"
+		elif output == "d":
+			print(marg_d)
+		elif output == "~d":
+			print prob_dict["~d"]
+		else:
+			print("Not a valid option")
+			sys.exit(2)
 
 
 if __name__ == "__main__":

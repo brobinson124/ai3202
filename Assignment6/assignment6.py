@@ -116,7 +116,15 @@ def s_given_c(cancer, pollution, smoker):
 	
 	return prob
 	
-def 
+def x_given_s(cancer, x, pollution, smoker):
+	numerator = joint_XSCP(cancer,x, pollution, smoker)
+	denometor = joint_SCP(cancer, pollution, smoker)
+	
+	prob = numerator/denometor
+	
+	prob_dict["x_given_s"] = prob
+	
+	return prob
 	
 def x_given_d(x, d):
 	#prob(x|c)*P(c)*P(d|c) + P(x|~c)*P(~c)*P(d|~c)  /  P(d)
@@ -199,13 +207,33 @@ def s_given_d(d,pollution,smoker,cancer):
 def c_given_d(cancer, d):
 	prob = ( d.prob["C"] * prob_dict["marg_c"] ) / prob_dict["d"]
 	
-	prob_dict["c_given_d"] = prob_dict
+	prob_dict["c_given_d"] = prob
 	
 	return prob
 
-		
+def c_given_p(cancer, x, pollution, smoker):
+	first = cancer.prob["~PS"] * pollution.prob["L"] * smoker.prob["T"]
+	second = cancer.prob["~P~S"] * pollution.prob["H"] * smoker.prob["F"]
+	
+	prob = (first+second)/pollution.prob["L"]
+	
+	prob_dict["c_given_p"] = prob
+	
+	return prob
+	
+def p_given_c(cancer, x, pollution, smoker):
+	c_given_p(cancer, x, pollution, smoker)
+	numerator = prob_dict["c_given_p"] * pollution.prob["H"]
+	denometor = prob_dict["marg_c"]
+	
+	prob = numerator/denometor
+	
+	prob_dict["p_given_c"] = prob
+	
+	return prob
 	
 def main():
+	print "conditional probability arguments need to be in double quotes."
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], "m:g:j:p:")
 	except getopt.GetoptError as err:
@@ -286,7 +314,29 @@ def main():
 			print("Not a valid option")
 			sys.exit(2)
 			
+	if operation == "-g":
+		if output == "p|p":
+			print(pollution_val)
+		if output == "p|s":
+			print(pollution_val)
+		if output == "p|c":
+			print p_given_c(cancer, x, pollution, smoker)
+		if output == "~p|d":
+			print p_high_given_d(d, pollution, smoker, cancer)
+		if output == "~p|s":
+			print(pollution_val)
+			
+		if output == "s|s":
+			print(smoker_val)
+		if output == "s|p":
+			print(smoker_val)
+		if output == "s|c":
+			print s_given_c(cancer, pollution, smoker)
+		
+			
 	print "Next step: Joints"
+	
+	print "How to do distributions???"
 
 
 if __name__ == "__main__":

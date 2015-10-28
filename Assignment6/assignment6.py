@@ -117,8 +117,20 @@ def s_given_c(cancer, pollution, smoker):
 	return prob
 	
 def x_given_s(cancer, x, pollution, smoker):
-	numerator = joint_XSCP(cancer,x, pollution, smoker)
-	denometor = joint_SCP(cancer, pollution, smoker)
+	#numerator = joint_XSCP(cancer,x, pollution, smoker)
+	#denometor = joint_SCP(cancer, pollution, smoker)
+	
+	prob_1 = x.prob["C"] * (cancer.prob["PS"]*smoker.prob["T"]*pollution.prob["L"])
+	prob_2 = x.prob["C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution.prob["H"])
+	prob_3 = x.prob["~C"] * ((1- cancer.prob["PS"])*smoker.prob["T"]*pollution.prob["L"])
+	prob_4 = x.prob["~C"] * ((1- cancer.prob["~PS"])*smoker.prob["T"]*pollution.prob["H"])
+	denometor_1 = cancer.prob["PS"]*pollution.prob["L"]*smoker.prob["T"]
+	denometor_2 = cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"]
+	denometor_3 = (1-cancer.prob["PS"])*pollution.prob["L"]*smoker.prob["T"]
+	denometor_4 = (1-cancer.prob["~PS"])*pollution.prob["H"]*smoker.prob["T"]
+	
+	numerator = prob_1+prob_2+prob_3+prob_4
+	denometor = denometor_1+denometor_2+denometor_3+denometor_4
 	
 	prob = numerator/denometor
 	
@@ -126,13 +138,15 @@ def x_given_s(cancer, x, pollution, smoker):
 	
 	return prob
 	
-def x_given_d(x, d):
+def x_given_d(x, d, cancer, pollution, smoker):
 	#prob(x|c)*P(c)*P(d|c) + P(x|~c)*P(~c)*P(d|~c)  /  P(d)
-	val = ((x.prob["C"]*prob_dict["C"]*d.prob["C"]) + (x.prob["~C"]*prob_dict["~C"]*d.prob["~C"])) / prob_dict["d"]
+	marginal_c(cancer, pollution, smoker)
+	marginal_d(cancer,d)
+	val = ((x.prob["C"]*prob_dict["marg_c"]*d.prob["C"]) + (x.prob["~C"]*prob_dict["~marg_c"]*d.prob["~C"])) / prob_dict["d"]
 	
 	prob_dict["x_given_d"] = val
 	
-	return prob_dict
+	return val
 	
 def c_given_d_s(d, smoker, cancer, pollution):
 	#P(c,d,s) / P(d,s)   p is hidden
@@ -150,14 +164,12 @@ def c_given_d_s(d, smoker, cancer, pollution):
 	prob_dict["c_given_d_s"] = val
 	
 	return prob_dict["c_given_d_s"]
-#########
-##WRONG##
-#########
+
 def d_given_p_high(d, pollution, smoker, cancer):
 	prob_1 = d.prob["C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution.prob["H"])
 	prob_2 = d.prob["C"] * (cancer.prob["~P~S"]*smoker.prob["F"]*pollution.prob["H"])
-	prob_3 = d.prob["~C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution.prob["H"])
-	prob_4 = d.prob["~C"] * (cancer.prob["~P~S"]*smoker.prob["F"]*pollution.prob["H"])
+	prob_3 = d.prob["~C"] * ((1-cancer.prob["~PS"])*smoker.prob["T"]*pollution.prob["H"])
+	prob_4 = d.prob["~C"] * ((1-cancer.prob["~P~S"])*smoker.prob["F"]*pollution.prob["H"])
 	denometor_1 = cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"]
 	denometor_2 = cancer.prob["~P~S"]*pollution.prob["H"]*smoker.prob["F"]
 	denometor_3 = (1-cancer.prob["~PS"])*pollution.prob["H"]*smoker.prob["T"]
@@ -173,7 +185,7 @@ def d_given_p_high(d, pollution, smoker, cancer):
 	return prob_dict["d_given_p_high"]
 	
 def p_high_given_d(d,pollution,smoker,cancer):
-	prob = (d_given_p_high(d, pollution, smoker, cancer) * prob_dict["d"]) / pollution.prob["H"]
+	prob = (d_given_p_high(d, pollution, smoker, cancer) * pollution.prob["H"] ) /prob_dict["d"]
 	
 	prob_dict["p_high_given_d"] = prob
 	
@@ -183,8 +195,8 @@ def p_high_given_d(d,pollution,smoker,cancer):
 def d_given_s(d, pollution, smoker, cancer, x):
 	prob_1 = d.prob["C"] * (cancer.prob["PS"]*smoker.prob["T"]*pollution.prob["L"])
 	prob_2 = d.prob["C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution.prob["H"])
-	prob_3 = d.prob["~C"] * (cancer.prob["PS"]*smoker.prob["T"]*pollution.prob["L"])
-	prob_4 = d.prob["~C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution.prob["H"])
+	prob_3 = d.prob["~C"] * ((1- cancer.prob["PS"])*smoker.prob["T"]*pollution.prob["L"])
+	prob_4 = d.prob["~C"] * ((1- cancer.prob["~PS"])*smoker.prob["T"]*pollution.prob["H"])
 	denometor_1 = cancer.prob["PS"]*pollution.prob["L"]*smoker.prob["T"]
 	denometor_2 = cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"]
 	denometor_3 = (1-cancer.prob["PS"])*pollution.prob["L"]*smoker.prob["T"]
@@ -196,8 +208,8 @@ def d_given_s(d, pollution, smoker, cancer, x):
 	top = joint_d_s_c_p(pollution, cancer, smoker, d, x)
 	bottom = joint_s_c_p(pollution, cancer, smoker, d, x)
 	
-	#val = numerator/denometor
-	val = top/bottom
+	val = numerator/denometor
+	#val = top/bottom
 	prob_dict["d_given_s"] = val
 	
 	return prob_dict["d_given_s"]
@@ -261,7 +273,7 @@ def d_given_c(pollution, cancer, smoker, d):
 	
 ########
 #TESTER#
-########
+##########################################
 
 def s_given_c_p(pollution, cancer, smoker, d, x):
 	numerator = smoker.prob["T"] * cancer.prob["PS"] * pollution.prob["L"]
@@ -296,16 +308,57 @@ def joint_d_s_c_p(pollution, cancer, smoker, d, x):
 	prob_dict["joint_d_s_c_p"] = prob
 	
 	return prob
+
+#####################################	
+	
+def p_high_given_c_s(smoker, cancer, pollution, x):
+	p_high_given_c(cancer, x, pollution, smoker)
+	numerator = cancer.prob["~PS"] * smoker.prob["T"] * pollution.prob["H"]
+	denometor = cancer.prob["~PS"]*smoker.prob["T"]*pollution.prob["H"] + cancer.prob["PS"]*smoker.prob["T"]*pollution.prob["L"]
+	
+	p = numerator/denometor
+	
+	prob_dict["p_high_given_c_s"] = p
+	
+	return p
 	
 	
+def p_high_given_d_s(smoker, cancer, pollution, d):
+	n1 = d.prob["C"]*cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"]
+	n2 = d.prob["~C"]*(1-cancer.prob["~PS"])*pollution.prob["H"]*smoker.prob["T"]
+	d1 = d.prob["C"]*cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"]
+	d2 = d.prob["C"]*cancer.prob["PS"]*pollution.prob["L"]*smoker.prob["T"]
+	d3 = d.prob["~C"]*(1-cancer.prob["~PS"])*pollution.prob["H"]*smoker.prob["T"]
+	d4 = d.prob["~C"]*(1-cancer.prob["PS"])*pollution.prob["L"]*smoker.prob["T"]
 	
+	numerator = n1+n2
+	denomater = d1+d2+d3+d4
 	
+	p = numerator/denomater
 	
+	prob_dict["p_high_given_d_s"] = p
 	
+	return p
 	
+def x_given_d_s(smoker, cancer, pollution, d, x):
+	n1 = x.prob["C"]*d.prob["C"]*cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"]
+	n2 = x.prob["~C"]*d.prob["~C"]*(1-cancer.prob["~PS"])*pollution.prob["H"]*smoker.prob["T"]	
+	n3 = x.prob["C"]*d.prob["C"]*cancer.prob["PS"]*pollution.prob["L"]*smoker.prob["T"]
+	n4 = x.prob["~C"]*d.prob["~C"]*(1-cancer.prob["PS"])*pollution.prob["L"]*smoker.prob["T"]
+	d1 = d.prob["C"]*cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"]
+	d2 = d.prob["~C"]*(1-cancer.prob["~PS"])*pollution.prob["H"]*smoker.prob["T"]	
+	d3 = d.prob["C"]*cancer.prob["PS"]*pollution.prob["L"]*smoker.prob["T"]
+	d4 = d.prob["~C"]*(1-cancer.prob["PS"])*pollution.prob["L"]*smoker.prob["T"]
+
+	num = n1+n2+n3+n4
+	den = d1+d2+d3+d4
 	
+	p = num/den
 	
+	prob_dict["x_given_d_s"] = p
 	
+	return p
+
 def main():
 	print "conditional probability arguments need to be in double quotes."
 	try:
@@ -390,8 +443,8 @@ def main():
 			sys.exit(2)
 			
 	if operation == "-g":
-		if output == "p|p":
-			print(pollution_val)
+		if output == "p|p" or output == "~p|~p":
+			print "1"
 		if output == "p|s":
 			print(pollution_val)
 		if output == "p|c":
@@ -399,12 +452,16 @@ def main():
 		if output == "~p|d":
 			print p_high_given_d(d, pollution, smoker, cancer)
 		if output == "~p|s":
-			print(pollution_val)
+			print(1 - pollution_val)
 		if output == "~p|c":
 			print p_high_given_c(cancer, x, pollution, smoker)
+		if output == "~p|sc" or output == "~p|cs":
+			print p_high_given_c_s(smoker, cancer, pollution, x)
+		if output == "~p|ds" or output == "~p|sd":
+			print p_high_given_d_s(smoker, cancer, pollution, d)
 			
-		if output == "s|s":
-			print(smoker_val)
+		if output == "s|s" or output == "s|sd" or output == "s|ds" or output == "s|cs" or output == "s|sc":
+			print "1"
 		if output == "s|p":
 			print(smoker_val)
 		if output == "s|c":
@@ -412,28 +469,36 @@ def main():
 		if output == "s|d":
 			print s_given_d(d, pollution, smoker, cancer, x)
 			
-		if output == "d|d":
-			print prob_dict["d"]
+		if output == "d|d" or output == "d|ds" or output == "d|sd":
+			print "1"
 		if output == "d|s":
 			print d_given_s(d, pollution, smoker, cancer, x)
 		if output == "d|p":
 			print (1 - d_given_p_high(d, pollution, smoker, cancer))
 		if output == "d|~p":
 			print d_given_p_high(d, pollution, smoker, cancer)
-		if output == "d|c":
+		if output == "d|c" or output == "d|cs" or output == "d|sc":
 			print d_given_c(pollution, cancer, smoker, d)
 			
-		if output == "c|c":
-			print marginal_c(cancer, pollution, smoker)
+		if output == "c|c" or output == "c|cs" or output == "c|sc":
+			print "1"
 		if output == "c|d":
 			print c_given_d(cancer, d)
 		if output == "c|s":
 			print c_given_s(cancer, pollution, smoker)
-		
+		if output == "c|ds" or output == "c|sd":
+			print c_given_d_s(d, smoker, cancer, pollution)
 			
-	print "Next step: Joints"
-	0
-	print "How to do distributions???"
+		if output == "x|x":
+			print "1"
+		if output == "x|s":
+			print x_given_s(cancer, x, pollution, smoker)
+		if output == "x|d":
+			print x_given_d(x,d, cancer, pollution, smoker)
+		if output == "x|c" or output == "x|cs" or output == "x|sc":
+			print x.prob["C"]
+		if output == "x|ds" or output == "x|sd":
+			print x_given_d_s(smoker, cancer, pollution, d, x)
 
 
 if __name__ == "__main__":

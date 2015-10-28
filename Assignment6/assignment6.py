@@ -272,9 +272,9 @@ def d_given_c(pollution, cancer, smoker, d):
 	return prob
 	
 ########
-#TESTER#
+#Joints that don't work#
 ##########################################
-
+'''
 def s_given_c_p(pollution, cancer, smoker, d, x):
 	numerator = smoker.prob["T"] * cancer.prob["PS"] * pollution.prob["L"]
 	denomater = cancer.prob["PS"] * pollution.prob["L"] * smoker.prob["T"] + cancer.prob["P~S"] * pollution.prob["L"] * smoker.prob["F"]
@@ -308,6 +308,7 @@ def joint_d_s_c_p(pollution, cancer, smoker, d, x):
 	prob_dict["joint_d_s_c_p"] = prob
 	
 	return prob
+'''
 
 #####################################	
 	
@@ -358,6 +359,50 @@ def x_given_d_s(smoker, cancer, pollution, d, x):
 	prob_dict["x_given_d_s"] = p
 	
 	return p
+	
+def joint_p_s_c(cancer, pollution, smoker, wanted):
+	
+	if wanted == "psc":
+		val = cancer.prob["PS"]*pollution.prob["L"]*smoker.prob["T"]
+	if wanted == "ps~c":
+		val = (1-cancer.prob["PS"])*pollution.prob["L"]*smoker.prob["T"]
+	if wanted == "p~s~c":
+		val = (1-cancer.prob["P~S"])*pollution.prob["L"]*smoker.prob["F"]
+	if wanted == "p~sc":
+		val = cancer.prob["P~S"]*pollution.prob["L"]*smoker.prob["F"]
+	if wanted == "~p~s~c":
+		val = (1-cancer.prob["~P~S"])*pollution.prob["H"]*smoker.prob["F"]
+	if wanted == "~psc":
+		val = cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"]
+	if wanted == "~p~sc":
+		val = cancer.prob["~P~S"]*pollution.prob["H"]*smoker.prob["F"]
+	if wanted == "~ps~c":
+		val = (1-cancer.prob["~PS"])*pollution.prob["H"]*smoker.prob["T"]
+		
+	return val
+		
+def joint_P_S_C(cancer, pollution, smoker):
+	everything = []
+	everything.append(cancer.prob["PS"]*pollution.prob["L"]*smoker.prob["T"])
+	everything.append((1-cancer.prob["PS"])*pollution.prob["L"]*smoker.prob["T"])
+	everything.append((1-cancer.prob["P~S"])*pollution.prob["L"]*smoker.prob["F"])
+	everything.append(cancer.prob["P~S"]*pollution.prob["L"]*smoker.prob["F"])
+	everything.append((1-cancer.prob["~P~S"])*pollution.prob["H"]*smoker.prob["F"])
+	everything.append(cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"])
+	everything.append(cancer.prob["~P~S"]*pollution.prob["H"]*smoker.prob["F"])
+	everything.append((1-cancer.prob["~PS"])*pollution.prob["H"]*smoker.prob["T"])
+	
+	return everything
+	      ###    #####
+	   ####### #########
+  ###########################
+##########Main#################
+  ###########################
+     #####################
+        ##############
+          #########
+            ####
+             #
 
 def main():
 	print "conditional probability arguments need to be in double quotes."
@@ -387,7 +432,7 @@ def main():
 		else: 
 			assert False, "unhandled option"
 
-	print output#now store the output into a node
+	#print output#now store the output into a node
     
 	pollution_val = .9
 	smoker_val = .3
@@ -418,29 +463,29 @@ def main():
 	if operation == "-m":
 		if output == "c":
 			print(marg_c)
-		elif output == "~c":
+		if output == "~c":
 			print(prob_dict["~marg_c"])
-		elif output == "s":
+		if output == "s":
 			print(smoker_val)
-		elif output == "~s":
+		if output == "~s":
 			opposite_val = 1- smoker_val 
 			print(opposite_val)
-		elif output == "p":
+		if output == "p":
 			print(pollution_val)
-		elif output == "~p":
+		if output == "~p":
 			opposite_val_p = 1 - pollution_val
 			print(opposite_val_p)
-		elif output == "x":
+		if output == "x":
 			print "Not written yet"
-		elif output == "~x":
+		if output == "~x":
 			print "Not written yet"
-		elif output == "d":
+		if output == "d":
 			print(marg_d)
-		elif output == "~d":
+		if output == "~d":
 			print prob_dict["~d"]
-		else:
-			print("Not a valid option")
-			sys.exit(2)
+		#else:
+		#	print("Not a valid option")
+		#s"	sys.exit(2)
 			
 	if operation == "-g":
 		if output == "p|p" or output == "~p|~p":
@@ -488,6 +533,10 @@ def main():
 			print c_given_s(cancer, pollution, smoker)
 		if output == "c|ds" or output == "c|sd":
 			print c_given_d_s(d, smoker, cancer, pollution)
+		if output == "c|p":
+			print c_given_p_low(cancer, x, pollution, smoker)
+		if output == "c|~p":
+			print c_given_p_high(cancer, x, pollution, smoker)
 			
 		if output == "x|x":
 			print "1"
@@ -499,7 +548,14 @@ def main():
 			print x.prob["C"]
 		if output == "x|ds" or output == "x|sd":
 			print x_given_d_s(smoker, cancer, pollution, d, x)
-
+			
+	if operation == "-j":
+		if output == "PSG":
+			print joint_P_S_C(cancer, pollution, smoker)
+		else: 
+			wanted = output
+			print joint_p_s_c(cancer, pollution, smoker, wanted)
+		
 
 if __name__ == "__main__":
     main()

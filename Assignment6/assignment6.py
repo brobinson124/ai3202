@@ -271,46 +271,6 @@ def d_given_c(pollution, cancer, smoker, d):
 	
 	return prob
 	
-########
-#Joints that don't work#
-##########################################
-'''
-def s_given_c_p(pollution, cancer, smoker, d, x):
-	numerator = smoker.prob["T"] * cancer.prob["PS"] * pollution.prob["L"]
-	denomater = cancer.prob["PS"] * pollution.prob["L"] * smoker.prob["T"] + cancer.prob["P~S"] * pollution.prob["L"] * smoker.prob["F"]
-	
-	prob = numerator/denomater
-	
-	prob_dict["s_given_c_p"] = prob
-	
-	return prob
-	
-def joint_s_c_p(pollution, cancer, smoker, d, x):
-	s_given_c_p(pollution, cancer, smoker, d, x)
-	c_given_p_low(cancer, x, pollution, smoker)
-	prob = prob_dict["s_given_c_p"] * prob_dict["c_given_p_low"] * pollution.prob["L"]
-	
-	prob_dict["joint_s_c_p"] = prob
-	
-	return prob
-	
-def joint_d_s_c_p(pollution, cancer, smoker, d, x):
-	s_given_c_p(pollution, cancer, smoker, d, x)
-	joint_s_c_p(pollution, cancer, smoker, d, x)
-	d_given_c(pollution, cancer, smoker, d)
-	s_given_c_p(pollution, cancer, smoker, d, x)
-	
-	numerator = prob_dict["d_given_c"]*cancer.prob["PS"]*smoker.prob["T"]*pollution.prob["L"]*prob_dict["s_given_c_p"]*pollution.prob["L"]
-	denometor = prob_dict["joint_s_c_p"]
-	
-	prob = numerator/denometor
-	
-	prob_dict["joint_d_s_c_p"] = prob
-	
-	return prob
-'''
-
-#####################################	
 	
 def p_high_given_c_s(smoker, cancer, pollution, x):
 	p_high_given_c(cancer, x, pollution, smoker)
@@ -393,8 +353,8 @@ def joint_P_S_C(cancer, pollution, smoker):
 	everything.append((1-cancer.prob["~PS"])*pollution.prob["H"]*smoker.prob["T"])
 	
 	return everything
-	      ###    #####
-	   ####### #########
+	   ###    #####
+	####### #########
   ###########################
 ##########Main#################
   ###########################
@@ -460,29 +420,54 @@ def main():
 	marg_d = marginal_d(cancer, d)
 	marg_x = marginal_x(cancer, x)
 	
+	C_list = []
+	S_list = []
+	P_list = []
+	D_list = []
+	X_list = []
+	
 	if operation == "-m":
 		if output == "c":
 			print(marg_c)
 		if output == "~c":
 			print(prob_dict["~marg_c"])
+		if output == "C":
+			C_list.append(marg_c)
+			C_list.append(prob_dict["~marg_c"])
+			print(my_list)
 		if output == "s":
 			print(smoker_val)
 		if output == "~s":
 			opposite_val = 1- smoker_val 
 			print(opposite_val)
+		if output == "S":
+			S_list.append(smoker_val)
+			S_list.append(1-smoker_val)
+			print(S_list)
 		if output == "p":
 			print(pollution_val)
 		if output == "~p":
 			opposite_val_p = 1 - pollution_val
 			print(opposite_val_p)
+		if output == "P":
+			P_list.append(pollution_val)
+			P_list.append(opposite_val_p)
+			print(P_list)
 		if output == "x":
-			print "Not written yet"
+			print marg_x
 		if output == "~x":
-			print "Not written yet"
+			print (1-marg_x)
+		if output == "X":
+			X_list.append(marg_x)
+			X_list.append((1-marg_x))
+			print(X_list)
 		if output == "d":
 			print(marg_d)
 		if output == "~d":
 			print prob_dict["~d"]
+		if output == "D":
+			D_list.append(marg_d)
+			D_list.append(prob_dict["~d"])
 		#else:
 		#	print("Not a valid option")
 		#s"	sys.exit(2)

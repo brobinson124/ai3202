@@ -150,12 +150,14 @@ def c_given_d_s(d, smoker, cancer, pollution):
 	prob_dict["c_given_d_s"] = val
 	
 	return prob_dict["c_given_d_s"]
-	
+#########
+##WRONG##
+#########
 def d_given_p_high(d, pollution, smoker, cancer):
-	prob_1 = d.prob["C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution["H"])
-	prob_2 = d.prob["C"] * (cancer.prob["~P~S"]*smoker.prob["F"]*pollution["H"])
-	prob_3 = d.prob["~C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution["H"])
-	prob_4 = d.prob["~C"] * (cancer.prob["~P~S"]*smoker.prob["F"]*pollution["H"])
+	prob_1 = d.prob["C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution.prob["H"])
+	prob_2 = d.prob["C"] * (cancer.prob["~P~S"]*smoker.prob["F"]*pollution.prob["H"])
+	prob_3 = d.prob["~C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution.prob["H"])
+	prob_4 = d.prob["~C"] * (cancer.prob["~P~S"]*smoker.prob["F"]*pollution.prob["H"])
 	denometor_1 = cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"]
 	denometor_2 = cancer.prob["~P~S"]*pollution.prob["H"]*smoker.prob["F"]
 	denometor_3 = (1-cancer.prob["~PS"])*pollution.prob["H"]*smoker.prob["T"]
@@ -179,10 +181,10 @@ def p_high_given_d(d,pollution,smoker,cancer):
 
 	
 def d_given_s(d, pollution, smoker, cancer):
-	prob_1 = d.prob["C"] * (cancer.prob["PS"]*smoker.prob["T"]*pollution["L"])
-	prob_2 = d.prob["C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution["H"])
-	prob_3 = d.prob["~C"] * (cancer.prob["PS"]*smoker.prob["T"]*pollution["L"])
-	prob_4 = d.prob["~C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution["H"])
+	prob_1 = d.prob["C"] * (cancer.prob["PS"]*smoker.prob["T"]*pollution.prob["L"])
+	prob_2 = d.prob["C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution.prob["H"])
+	prob_3 = d.prob["~C"] * (cancer.prob["PS"]*smoker.prob["T"]*pollution.prob["L"])
+	prob_4 = d.prob["~C"] * (cancer.prob["~PS"]*smoker.prob["T"]*pollution.prob["H"])
 	denometor_1 = cancer.prob["PS"]*pollution.prob["L"]*smoker.prob["T"]
 	denometor_2 = cancer.prob["~PS"]*pollution.prob["H"]*smoker.prob["T"]
 	denometor_3 = (1-cancer.prob["PS"])*pollution.prob["L"]*smoker.prob["T"]
@@ -211,24 +213,37 @@ def c_given_d(cancer, d):
 	
 	return prob
 
-def c_given_p(cancer, x, pollution, smoker):
-	first = cancer.prob["~PS"] * pollution.prob["L"] * smoker.prob["T"]
+def c_given_p_high(cancer, x, pollution, smoker):
+	first = cancer.prob["~PS"] * pollution.prob["H"] * smoker.prob["T"]
 	second = cancer.prob["~P~S"] * pollution.prob["H"] * smoker.prob["F"]
 	
-	prob = (first+second)/pollution.prob["L"]
+	prob = (first+second)/pollution.prob["H"]
 	
-	prob_dict["c_given_p"] = prob
+	prob_dict["c_given_p_high"] = prob
 	
 	return prob
 	
-def p_given_c(cancer, x, pollution, smoker):
-	c_given_p(cancer, x, pollution, smoker)
-	numerator = prob_dict["c_given_p"] * pollution.prob["H"]
+def p_high_given_c(cancer, x, pollution, smoker):
+	c_given_p_high(cancer, x, pollution, smoker)
+	numerator = prob_dict["c_given_p_high"] * pollution.prob["H"]
 	denometor = prob_dict["marg_c"]
 	
 	prob = numerator/denometor
 	
-	prob_dict["p_given_c"] = prob
+	prob_dict["p_high_given_c"] = prob
+	
+	return prob
+	
+def d_given_c(pollution, cancer, smoker, d):
+	c_given_d(cancer, d)
+	marginal_d(cancer, d)
+	marginal_c(cancer, pollution, smoker)
+	numerator = prob_dict["c_given_d"] * prob_dict["d"]
+	denometor = prob_dict["marg_c"]
+	
+	prob = numerator/denometor
+	
+	prob_dict["d_given_c"] = prob
 	
 	return prob
 	
@@ -325,6 +340,8 @@ def main():
 			print p_high_given_d(d, pollution, smoker, cancer)
 		if output == "~p|s":
 			print(pollution_val)
+		if output == "~p|c":
+			print p_high_given_c(cancer, x, pollution, smoker)
 			
 		if output == "s|s":
 			print(smoker_val)
@@ -332,6 +349,26 @@ def main():
 			print(smoker_val)
 		if output == "s|c":
 			print s_given_c(cancer, pollution, smoker)
+		if output == "s|d":
+			print s_given_d(d, pollution, smoker, cancer)
+			
+		if output == "d|d":
+			print prob_dict["d"]
+		if output == "d|s":
+			print d_given_s(d, pollution, smoker, cancer)
+		if output == "d|p":
+			print (1 - d_given_p_high(d, pollution, smoker, cancer))
+		if output == "d|~p":
+			print d_given_p_high(d, pollution, smoker, cancer)
+		if output == "d|c":
+			print d_given_c(pollution, cancer, smoker, d)
+			
+		if output == "c|c":
+			print marginal_c(cancer, pollution, smoker)
+		if output == "c|d":
+			print c_given_d(cancer, d)
+		if output == "c|s":
+			print c_given_s(cancer, pollution, smoker)
 		
 			
 	print "Next step: Joints"

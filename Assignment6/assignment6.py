@@ -1,5 +1,6 @@
 #Assignment 6
 #Bays Nets
+#worked with Mario Alanis and Jennifer Micheal
 
 import getopt
 import sys

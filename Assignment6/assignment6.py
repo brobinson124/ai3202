@@ -206,8 +206,8 @@ def d_given_s(d, pollution, smoker, cancer, x):
 	numerator = prob_1+prob_2+prob_3+prob_4
 	denometor = denometor_1+denometor_2+denometor_3+denometor_4
 	
-	top = joint_d_s_c_p(pollution, cancer, smoker, d, x)
-	bottom = joint_s_c_p(pollution, cancer, smoker, d, x)
+	#top = joint_d_s_c_p(pollution, cancer, smoker, d, x)
+	#bottom = joint_s_c_p(pollution, cancer, smoker, d, x)
 	
 	val = numerator/denometor
 	#val = top/bottom

@@ -42,27 +42,44 @@ def prior():
 	
 	num_c_true = 0.0
 	num_c_given_rain = 0.0
-	num_s_given_w = 0.0
+	num_c_false_given_rain = 0.0
+	num_s_w = 0.0
 	num_s_given_c_w = 0.0
+	num_s_true = 0.0
+	num_s_true_c_false = 0.0
+	num_r_w = 0.0
 	for val in sample:
 		if val[0] == True:
 			num_c_true = num_c_true + 1.0
 		if val[0] == True and val[1] == True:
 			num_c_given_rain = num_c_given_rain + 1.0
+		if val[0] == False and val[1] == True:
+			num_c_false_given_rain = num_c_false_given_rain + 1.0
+		if val[2] == True and val[0] == True:
+			num_s_true = num_s_true + 1.0
+		if val[2] == True and val[0] == False:
+			num_s_true_c_false = num_s_true_c_false + 1.0
 		if val[2] == True and val[3] == True:
-			num_s_given_w = num_s_given_w + 1.0
+			num_s_w = num_s_w + 1.0
 		if val[2] == True and val[3] == True and val[0] == True:
 			num_s_given_c_w = num_s_given_c_w + 1.0
+		if val[3] == True and val[1] == True:
+			num_r_w = num_r_w +1.0
 			
-	print (num_c_true)
-	c_true = num_c_true/25
-	c_given_rain = num_c_given_rain/25
-	s_given_w = num_s_given_w/25
-	s_given_c_w = num_s_given_c_w/25
+	#1.a)
+	c_true = num_c_true/25.0
+	
+	#1.b)
+	c_given_rain = ((num_c_given_rain/25.0)*c_true)/(((num_c_false_given_rain/25.0)*(1-c_true))+((num_c_given_rain/25.0)*c_true))
+	
+	s_true = ((num_s_true/25.0)*c_true) + ((num_s_true_c_false/25.0)*(1-c_true))
+	#w_true = (num_s_w/25.0)*(s_true) + (num_r_w/25.0)*
+	
+	s_given_c_w = num_s_given_c_w/25.0
 	print "P: P(c=true): ",c_true 
 	print "P: P(c=true|rain): ",c_given_rain
-	print "P: P(s=true|w ", s_given_w 
-	print "P: P(s=true|c,w ", s_given_c_w 
+	print "P: P(s=true|w) ", (num_s_w/25.0)
+	print "P: P(s=true|c,w) ", s_given_c_w 
 	
 
 
@@ -115,7 +132,7 @@ def rejection(keepers):
 		i = i + 4
 		
 		
-		
+	
 	if keepers == "c":
 		print "R: P(c=true): ", (counter/25.0)
 	elif keepers == "c_given_r":
@@ -139,12 +156,14 @@ def exact():
 	
 	prob["r=true|c=true"] = 0.8
 	prob["r=true|c=false"] = 0.2
+	prob["r=false|c=true"] = 0.2
 	r_true = prob["r=true|c=true"]*prob["c=true"] + prob["r=true|c=false"]*prob["c=false"]
 	prob["r=true"] = r_true
 	prob["r=false"] = (1-r_true)
 	
 	prob["s=true|c=true"] = 0.1
 	prob["s=true|c=false"]= 0.5
+	prob["s=false|c=true"] = 0.9
 	s_true = prob["s=true|c=true"]*prob["c=true"] + prob["s=true|c=false"]*prob["c=false"]
 	prob["s=true"] = s_true
 	prob["s=false"] = (1-s_true)
@@ -164,24 +183,23 @@ def exact():
 	s_given_w = (prob["w=true|s=true"]*prob["s=true"])/prob["w=true"]
 	prob["s=true|w=true"] = s_given_w
 	
-	w_AND_c = prob["w=true"] * prob["c=true"]
+	w_AND_c = prob["w=true|s=true,r=true"]*prob["s=true|c=true"]*prob["r=true|c=true"]*prob["c=true"] + prob["w=true|s=true,r=false"]*prob["s=true|c=true"]*prob["r=false|c=true"]*prob["c=true"] + prob["w=true|s=false,r=true"]*prob["s=false|c=true"]*prob["r=true|c=true"]*prob["c=true"] + prob["w=true|s=false,r=false"]*prob["s=false|c=true"]*prob["r=false|c=true"]*prob["c=true"]
 	s_AND_w_AND_c = prob["w=true|s=true"] * prob["s=true|c=true"]*prob["c=true"]
 	s_given_w_c = (s_AND_w_AND_c)/(w_AND_c)
 	prob["s=true|c=true,w=true"] = s_given_w_c
 	
 	print "Exact values: "
-	#P(c=true)
-	print prob["c=true"]
-	#P(c=true|rain=true)
-	print prob["c=true|r=true"]
-	#P(s=true|w=true)
-	print prob["s=true|w=true"]
-	#P(s=true|c=true,w=true)
-	print prob["s=true|c=true,w=true"]
+	print "P(c=true): ", prob["c=true"]
+	print "P(c=true|rain=true): ",prob["c=true|r=true"]
+	print "P(s=true|w=true): ",prob["s=true|w=true"]
+	print "P(s=true|c=true,w=true): ",prob["s=true|c=true,w=true"]
 
+print "Prior: "
 prior()
+exact()
+print "Rejection: "
 rejection("c")
 rejection("c_given_r")
 rejection("s_given_w")
 rejection("s_given_c_w")
-exact()
+

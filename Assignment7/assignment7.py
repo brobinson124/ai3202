@@ -49,34 +49,7 @@ def prior():
 			counter["w|~s~r"] += 1.0
 
 		i = i + 4
-	'''
-	num_c_true = 0.0
-	num_c_given_rain = 0.0
-	num_c_false_given_rain = 0.0
-	num_s_w = 0.0
-	num_s_given_c_w = 0.0
-	num_s_true = 0.0
-	num_s_true_c_false = 0.0
-	num_r_w = 0.0
-	for val in sample:
-		if val[0] == True:
-			num_c_true = num_c_true + 1.0
-		if val[0] == True and val[1] == True:
-			num_c_given_rain = num_c_given_rain + 1.0
-		if val[0] == False and val[1] == True:
-			num_c_false_given_rain = num_c_false_given_rain + 1.0
-		if val[2] == True and val[0] == True:
-			num_s_true = num_s_true + 1.0
-		if val[2] == True and val[0] == False:
-			num_s_true_c_false = num_s_true_c_false + 1.0
-		if val[2] == True and val[3] == True:
-			num_s_w = num_s_w + 1.0
-		if val[2] == True and val[3] == True and val[0] == True:
-			num_s_given_c_w = num_s_given_c_w + 1.0
-		if val[3] == True and val[1] == True:
-			num_r_w = num_r_w +1.0
-			
-			'''
+
 	#1.a)
 	c_true = counter["c"]/25.0
 	
@@ -239,64 +212,7 @@ def rejection():
 			y += 1.0
 	
 	print "R: P(s=true|c,w): ",x/(x+y)
-	'''
-	counter = 0.0
-	i = 0
-	cloudy = False
-	sprinkler = False
-	rain = False
-	wet = False
-	sample = []
-	while i < 100:
-		cloudy = False
-		sprinkler = False
-		rain = False
-		wet = False
-		u_c = myArr[i]
-		u_r = myArr[i+1]
-		u_s = myArr[i+2]
-		u_w = myArr[i+3]
-		
-		if u_c < 0.5 and u_c >= 0:
-			cloudy = True
-		if u_r < 0.8 and u_r >= 0:
-			rain = True
-		if u_s < 0.1 and u_s >= 0:
-			sprinkler = True
-		if u_w < 0.9 and u_w >= 0:
-			wet = True
-		
-		
-		if keepers == "c":
-			if cloudy == True:
-				sample.append([cloudy, rain, sprinkler, wet])
-				counter = counter +1.0
-		elif keepers == "c_given_r":
-			if cloudy == True and rain == True:
-				sample.append([cloudy, rain, sprinkler, wet])
-				counter = counter +1.0
-		elif keepers == "s_given_w":
-			if sprinkler == True and wet == True:
-				sample.append([cloudy, rain, sprinkler, wet])
-				counter = counter +1.0
-		elif keepers == "s_given_c_w":
-			if sprinkler == True and wet == True and cloudy == True:
-				sample.append([cloudy, rain, sprinkler, wet])
-				counter = counter +1.0
-				
-				
-		i = i + 4
-		
-	if keepers == "c":
-		print "R: P(c=true): ", (counter/25.0)
-	elif keepers == "c_given_r":
-		print"R: P(c=true|rain): ", (counter/25.0)
-	elif keepers == "s_given_w":
-		print "R: P(s=true|w) ", (counter/25.0)
-	elif keepers == "s_given_c_w":
-		print "P(s=true|c,w) ", (counter/25.0)
-		
-		'''
+
 	
 	
 
@@ -329,16 +245,22 @@ def exact():
 	prob["w=true|s=true,r=false"] = 0.90
 	prob["w=true|s=false,r=true"] = 0.90
 	prob["w=true|s=false,r=false"] = 0.00
-	w_true = prob["w=true|s=true,r=true"]*prob["s=true"]*prob["r=true"] + prob["w=true|s=true,r=false"]*prob["s=true"]*prob["r=false"] + prob["w=true|s=false,r=true"]*prob["s=false"]*prob["r=true"] + prob["w=true|s=false,r=false"]*prob["s=false"]*prob["r=false"]
+	w_true = (prob["w=true|s=true,r=true"]*prob["s=true"]*prob["r=true"]) + (prob["w=true|s=true,r=false"]*prob["s=true"]*prob["r=false"]) + (prob["w=true|s=false,r=true"]*prob["s=false"]*prob["r=true"]) + (prob["w=true|s=false,r=false"]*prob["s=false"]*prob["r=false"])
 	prob["w=true"] = w_true
 	
 	c_given_r = (prob["r=true|c=true"]*prob["c=true"])/prob["r=true"]
 	prob["c=true|r=true"] = c_given_r
 	
-	w_given_s =  prob["w=true|s=true,r=true"]*prob["s=true"]*prob["r=true"] + prob["w=true|s=true,r=false"]*prob["s=true"]*prob["r=false"]
+	w_given_s = (prob["w=true|s=true,r=true"]*prob["s=true"]*prob["r=true"]) + (prob["w=true|s=true,r=false"]*prob["s=true"]*prob["r=false"])
 	prob["w=true|s=true"] = w_given_s
-	s_given_w = (prob["w=true|s=true"]*prob["s=true"])/prob["w=true"]
+	s_given_w = (prob["w=true|s=true"]*prob["s=true"]*prob["r=true"])/prob["w=true"]
 	prob["s=true|w=true"] = s_given_w
+	
+	prob["s"] = .1*.5 + .5*.5
+	prob["r"] = .8*.5 + .2*.5
+	prob["w|s"] = (.99*prob["s"]*prob["r"]) + (.9*prob["s"]*(1-prob["r"]))
+	prob["w"] = (.99*prob["s"]*prob["r"]) + (.9*prob["s"]*(1-prob["r"])) + (.9*(1-prob["s"])*prob["r"]) + .0
+	prob["s|w"] = (prob["w|s"]*.5 + prob["w|s"]*.5)/prob["w"]
 	
 	w_AND_c = prob["w=true|s=true,r=true"]*prob["s=true|c=true"]*prob["r=true|c=true"]*prob["c=true"] + prob["w=true|s=true,r=false"]*prob["s=true|c=true"]*prob["r=false|c=true"]*prob["c=true"] + prob["w=true|s=false,r=true"]*prob["s=false|c=true"]*prob["r=true|c=true"]*prob["c=true"] + prob["w=true|s=false,r=false"]*prob["s=false|c=true"]*prob["r=false|c=true"]*prob["c=true"]
 	s_AND_w_AND_c = prob["w=true|s=true"] * prob["s=true|c=true"]*prob["c=true"]
@@ -348,7 +270,7 @@ def exact():
 	print "Exact values: "
 	print "P(c=true): ", prob["c=true"]
 	print "P(c=true|rain=true): ",prob["c=true|r=true"]
-	print "P(s=true|w=true): ",prob["s=true|w=true"]
+	print "P(s=true|w=true): ",prob["s|w"]
 	print "P(s=true|c=true,w=true): ",prob["s=true|c=true,w=true"]
 
 print "Prior: "

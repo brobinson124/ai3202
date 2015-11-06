@@ -7,39 +7,49 @@
 myArr = [0.82, 0.56, 0.08, 0.81, 0.34, 0.22, 0.37, 0.99, 0.55, 0.61, 0.31, 0.66, 0.28,	1.0, 0.95, 0.71, 0.14, 0.1, 1.0, 0.71,	0.1, 0.6, 0.64, 0.73, 0.39, 0.03, 0.99, 1.0, 0.97, 0.54, 0.8, 0.97,	0.07, 0.69, 0.43, 0.29, 0.61, 0.03, 0.13, 0.14,	0.13, 0.4, 0.94, 0.19, 0.6,	0.68, 0.36, 0.67, 0.12, 0.38, 0.42, 0.81, 0.0, 0.2, 0.85,	0.01, 0.55, 0.3, 0.3, 0.11,	0.83, 0.96,	0.41, 0.65,	0.29, 0.4, 0.54, 0.23, 0.74, 0.65, 0.38, 0.41, 0.82, 0.08, 0.39, 0.97,	0.95, 0.01, 0.62, 0.32,	0.56, 0.68,	0.32, 0.27, 0.77, 0.74,	0.79, 0.11,	0.29, 0.69, 0.99, 0.79,	0.21, 0.2, 0.43, 0.81, 0.9, 0.0, 0.91, 0.01]
 
 def prior():
-	counter = 0
-	i = 0
-	cloudy = False
-	sprinkler = False
-	rain = False
-	wet = False
-	sample = []
-	while i < 100:
-		cloudy = False
-		sprinkler = False
-		rain = False
-		wet = False
-		u_c = myArr[i]
-		u_r = myArr[i+1]
-		u_s = myArr[i+2]
-		u_w = myArr[i+3]
-		
-		if u_c < 0.5 and u_c >= 0:
-			cloudy = True
-		if u_r < 0.8 and u_r >= 0:
-			rain = True
-		if u_s < 0.1 and u_s >= 0:
-			sprinkler = True
-		if u_w < 0.9 and u_w >= 0:
-			wet = True
-		
-		
-		
-		sample.append([cloudy, rain, sprinkler, wet])
-		
-		counter = counter +1
-		i = i + 4
 	
+	i = 0
+	counter = {"c":0.0,"s|c":0.0,"s|~c":0.0,"r|c":0.0,"r|~c":0.0,"w|sr":0.0,"w|s~r":0.0,"w|~sr":0.0,"w|~s~r":0.0}
+	while i < 100:
+		#cloudy = False
+		#sprinkler = False
+		#rain = False
+		#wet = False
+		#u_c = myArr[i]
+		#u_r = myArr[i+1]
+		#u_s = myArr[i+2]
+		#u_w = myArr[i+3]
+		
+		#if u_c < 0.5 and u_c >= 0:
+		#	cloudy = True
+		#if u_r < 0.8 and u_r >= 0:
+		#	rain = True
+		#if u_s < 0.1 and u_s >= 0:
+		#	sprinkler = True
+		#if u_w < 0.9 and u_w >= 0:
+		#	wet = True
+		
+		if myArr[i] < 0.5:			#number cloudy is true
+			counter["c"] += 1.0
+		if myArr[i+1] < 0.1:		#number sprinklers given cloudy
+			counter["s|c"] += 1.0
+		if myArr[i+1] < 0.5:		#number sprinklers given that cloudy = false
+			counter["s|~c"] += 1.0
+		if myArr[i+2] < 0.8:		#number of sample where rain is given by cloudy
+			counter["r|c"] += 1.0
+		if myArr[i+2] < 0.2:		#number of sample where rain is given by cloudy = false
+			counter["r|~c"] += 1.0
+		if myArr[i+3] < 0.99:		#number of times grass is wet given that sprinkers went off and it rained
+			counter["w|sr"] += 1.0
+		if myArr[i+3] < 0.9:		#number of times grass is wet given that sprinkers went off and it DIDN'T rain
+			counter["w|s~r"] += 1.0
+		if myArr[i+3] < 0.9:		#number of times grass is wet given that sprinkers DIDN'T go off and it rained
+			counter["w|~sr"] += 1.0
+		if myArr[i+3] == 0.0:		#grass is never wet with no rain or sprinklers
+			counter["w|~s~r"] += 1.0
+
+		i = i + 4
+	'''
 	num_c_true = 0.0
 	num_c_given_rain = 0.0
 	num_c_false_given_rain = 0.0
@@ -66,24 +76,170 @@ def prior():
 		if val[3] == True and val[1] == True:
 			num_r_w = num_r_w +1.0
 			
+			'''
 	#1.a)
-	c_true = num_c_true/25.0
+	c_true = counter["c"]/25.0
 	
 	#1.b)
-	c_given_rain = ((num_c_given_rain/25.0)*c_true)/(((num_c_false_given_rain/25.0)*(1-c_true))+((num_c_given_rain/25.0)*c_true))
+	r = ((counter["r|c"]/25.0)*c_true)+((counter["r|~c"]/25.0)*(1-c_true))
+	c_r = ((counter["r|c"]/25.0)*c_true)/r
+
+	#1.c)
+	s = ((counter["s|c"]/25.0)*c_true) + ((counter["s|~c"]/25.0)*(1-c_true))
+	w_s = ((counter["w|sr"]/25.0)*s*r) + ((counter["w|s~r"]/25.0)*s*(1-r)) + ((counter["w|~s~r"]/25.0)*(1-s)*(1-r))
 	
-	s_true = ((num_s_true/25.0)*c_true) + ((num_s_true_c_false/25.0)*(1-c_true))
-	#w_true = (num_s_w/25.0)*(s_true) + (num_r_w/25.0)*
+	numerator = (w_s*.5)+(w_s*.5)
+	denometor = (w_s) + ((counter["w|~sr"]/25.0)*s*r) + ((counter["w|~s~r"]/25.0)*(1-s)*(1-r))
 	
-	s_given_c_w = num_s_given_c_w/25.0
+	s_w = numerator/denometor
+	
+	#1.d)
+	numerator = w_s*c_true*(counter["s|c"]/25.0)
+	#denometor = ((counter["w|sr"]/25.0)*(counter["s|c"]/25.0)*(counter["r|c"]/25.0) + (counter["w|s~r"]/25.0)*(counter["s|c"]/25.0)*(1-counter
+	s_c_w = numerator#/denometor
+	
 	print "P: P(c=true): ",c_true 
-	print "P: P(c=true|rain): ",c_given_rain
-	print "P: P(s=true|w) ", (num_s_w/25.0)
-	print "P: P(s=true|c,w) ", s_given_c_w 
+	print "P: P(c=true|rain): ",c_r
+	print "P: P(s=true|w) ", s_w
+	print "P: P(s=true|c,w) ", s_c_w
 	
 
 
-def rejection(keepers):
+
+def rejection():
+	prob = {}
+	counter = []
+	i = 0
+	while i < 100:
+		c = i
+		r = i + 1
+		s = i + 2
+		w = i + 3
+
+		cloudy = False
+		rain = False
+		sprinkler = False
+		wet = False
+		
+		if myArr[c] < 0.5:
+			cloudy = True
+			if myArr[r] < 0.8 and myArr[s] < 0.1: 
+				rain = True
+				sprinkler = True
+				if myArr[w] < 0.99:
+					wet = True
+					counter.append([cloudy,rain,sprinkler,wet])
+				else:
+					counter.append([cloudy,rain,sprinkler,wet])
+			elif myArr[s] < 0.1 and myArr[r] >= 0.8:
+				rain = False
+				sprinkler = True
+				if myArr[w] < 0.9:
+					wet = True
+					counter.append([cloudy,rain,sprinkler,wet])
+				else:
+					counter.append([cloudy,rain,sprinkler,wet])
+			elif myArr[r] < 0.8 and myArr[s] >= 0.1:
+				rain = True
+				sprinkler = False
+				if myArr[w] < 0.9:
+					wet = True
+					counter.append([cloudy,rain,sprinkler,wet])
+				else:
+					counter.append([cloudy,rain,sprinkler,wet])
+			elif myArr[r] >= 0.8 and myArr[s] >= 0.1:
+				rain = False
+				sprinkler = False
+				wet = False #Grass can never be wet when no sprinkler or rain
+				counter.append([cloudy,rain,sprinkler,wet])
+		if myArr[c] >= 0.5: 
+			cloudy = False
+			if myArr[r] < 0.2 and myArr[s] < 0.5:
+				rain = True
+				sprinkler = True
+				if myArr[w] < 0.99:
+					wet = True
+					counter.append([cloudy,rain,sprinkler,wet])
+				else:
+					counter.append([cloudy,rain,sprinkler,wet])
+			elif myArr[r] >= 0.2 and myArr[s] < 0.5:
+				rain = False
+				sprinkler = True
+				if myArr[w] < 0.9:
+					wet = True
+					counter.append([cloudy,rain,sprinkler,wet])
+				else:
+					counter.append([cloudy,rain,sprinkler,wet])
+			elif myArr[r] < 0.2 and myArr[s] >= 0.5:
+				rain = True
+				sprinkler = False
+				if myArr[w] < 0.9:
+					wet = True
+					counter.append([cloudy,rain,sprinkler,wet])
+				else:
+					counter.append([cloudy,rain,sprinkler,wet])
+			elif myArr[r] >= 0.2 and myArr[s] >= 0.5:
+				rain = False
+				sprinkler = False
+				wet = False #grass can't be wet
+				counter.append([cloudy,rain,sprinkler,wet])
+				
+		i = i + 4
+
+
+	#set values in order to call index's easier
+	c = 0
+	r = 1
+	s = 2
+	w = 3
+	
+	
+	#3.a)
+	x = 0.0
+	y = 0.0
+	for j in counter:
+		if j[c] == True:
+			x += 1.0
+		if j[c] == False:
+			y += 1.0
+
+	print "R: P(c=true): ",x/(x+y)
+
+	#3.b)
+	#reset counters
+	x = 0.0
+	y = 0.0
+	for k in counter:
+		if k[c] == True and k[r] == True:
+			x += 1.0
+		if k[c] == False and k[r] == True:
+			y += 1.0
+			
+	print "R: P(c=true|r): ",x/(x+y)
+
+	#3.c)
+	#reset again
+	x = 0.0
+	y = 0.0
+	for m in counter:
+		if m[s] == True and m[w] == True:
+			x += 1.0
+		if m[s] == False and m[w] == True:
+			y += 1.0
+	
+	print "R: P(s=true|w): ",x/(x+y)
+
+	#3.d)
+	x = 0.0
+	y = 0.0
+	for n in counter:
+		if n[s] == True and n[c] == True and n[w] == True:
+			x += 1.0
+		if n[s] == False and n[c] == True and n[w] == True:
+			y += 1.0
+	
+	print "R: P(s=true|c,w): ",x/(x+y)
+	'''
 	counter = 0.0
 	i = 0
 	cloudy = False
@@ -131,8 +287,6 @@ def rejection(keepers):
 				
 		i = i + 4
 		
-		
-	
 	if keepers == "c":
 		print "R: P(c=true): ", (counter/25.0)
 	elif keepers == "c_given_r":
@@ -142,6 +296,9 @@ def rejection(keepers):
 	elif keepers == "s_given_c_w":
 		print "P(s=true|c,w) ", (counter/25.0)
 		
+		'''
+	
+	
 
 def exact():
 	#P(c=true)
@@ -198,8 +355,5 @@ print "Prior: "
 prior()
 exact()
 print "Rejection: "
-rejection("c")
-rejection("c_given_r")
-rejection("s_given_w")
-rejection("s_given_c_w")
+rejection()
 
